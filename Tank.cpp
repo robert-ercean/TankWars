@@ -9,15 +9,6 @@ Tank::Tank(float initialX) {
 	this->brake = true;
 	this->meshes = ObjectsGeometry::getTankMeshes();
 	this->y = 0;
-	this->proj = false;
-	this->projCoord = { 0, 0 };
-	this->projVect = {cos(cannonAngle) * 30.0f, sin(cannonAngle) * 30.0f};
-}
-glm::vec2& Tank::getProjCoord() {
-	return this->projCoord;
-}
-glm::vec2& Tank::getProjVect() {
-	return this->projVect;
 }
 void Tank::setY(float y) {
 	this->y = y;
@@ -25,10 +16,7 @@ void Tank::setY(float y) {
 vector<Mesh*> Tank::getMeshes() {
 	return this->meshes;
 }
-void Tank::decrementCannonAngle(float radians) {
-	this->cannonAngle -= radians;
-}
-void Tank::incrementCannonAngle(float radians) {
+void Tank::incCannonAngle(float radians) {
 	this->cannonAngle += radians;
 }
 float Tank::getCannonAngle() {
@@ -43,9 +31,6 @@ float Tank::getY() {
 bool Tank::is_brake() {
 	return this->brake;
 }
-void Tank::incrementX(float tX) {
+void Tank::incX(float tX) {
 	this->x += tX;
-}
-void Tank::decrementX(float tX) {
-	this->x -= tX;
 }

@@ -11,7 +11,7 @@ using namespace m1;
 
 tema1::tema1() :
     terrainBuilder(static_cast<float>(window->GetResolution().x), static_cast<float>(window->GetResolution().y)),
-    tank1(50.0f),
+    tank1(100.0f),
     tank2(700.0f)
 {}
 
@@ -47,13 +47,17 @@ void tema1::FrameStart()
     glViewport(0, 0, resolution.x, resolution.y);
 }
 
-void tema1::drawProjectile(Tank& tank, float deltaTimeSeconds) {
-    
+void tema1::queueProjectile(Tank& tank) {
+    float x = tank.getX();
+    float y = tank.getY();
+    float radians = tank.getCannonAngle();
+    Projectile proj(x, y, radians);
+    projectiles.push_back(proj);
 }
 
 void tema1::drawTank(float deltaTimeSeconds, Tank &tank) {
     float threshold = 1.0f;
-    float e, landslideX, landslideY;
+    float landslideX, landslideY;
     landslideX = 0.0f;
     landslideY = 0.0f;
     glm::mat3 tankMat(1);
@@ -67,14 +71,15 @@ void tema1::drawTank(float deltaTimeSeconds, Tank &tank) {
     Ay = get<1>(bounds);
     Bx = get<2>(bounds);
     By = get<3>(bounds);
-    float tankY;
 
+    float tankY;
     float deltaH = (Ay - By);
+
     if (abs(deltaH) > threshold) {
-        // sign indices if the tank is sliding in the axis orientation, or opposed to it
+        // sign is showing if the tank should be sliding in the axis orientation, or opposed to it
         float sign = (deltaH > 0) ? 1.0f : -1.0f;
-        landslideX = sign * deltaTimeSeconds * 35.0f;
-        tank.incrementX(landslideX);
+        landslideX = sign * deltaTimeSeconds * 30.0f;
+        tank.incX(landslideX);
     }
     float t = (tank.getX() - Ax) / (Bx - Ax);
     tankY = Ay + t * (By - Ay);
@@ -82,7 +87,7 @@ void tema1::drawTank(float deltaTimeSeconds, Tank &tank) {
     float Vy = By - Ay;
     float Vx = Bx - Ax;
 
-
+    glm::mat3 trajMat(1);
     tankMat *= transform2D::Translate(tank.getX(), tankY);
     tankMat *= transform2D::Scale(15.0f, 15.0f);
     tankMat *= transform2D::Rotate(atan2(Vy, Vx));
@@ -92,15 +97,31 @@ void tema1::drawTank(float deltaTimeSeconds, Tank &tank) {
             tankMat *= transform2D::Translate(0, 2.0f);
             tankMat *= transform2D::Rotate(tank.getCannonAngle());
             tankMat *= transform2D::Translate(0, -2.0f);
+            trajMat = tankMat; /* The trajectory mesh will follow the same transformations as the cannon */
+            RenderMesh2D(mesh, shaders["VertexColor"], tankMat);
+            continue;
         }
         RenderMesh2D(mesh, shaders["VertexColor"], tankMat);
     }
-
 }
 void tema1::drawTerrain() {
     for (const auto& mesh: terrainBuilder.getTerrainMeshes()) {
-        RenderMesh2D(mesh, glm::mat3(1), glm::vec3(0, 1, 0));
+        RenderMesh2D(mesh, shaders["VertexColor"], glm::mat3(1));
     }
+}
+
+void tema1::drawProjectile(Projectile &proj, float deltaTime) {
+    glm::mat3 modelMatrix(1);
+    modelMatrix *= transform2D::Translate(proj.x, proj.y);
+    modelMatrix *= transform2D::Scale(10.0f, 10.0f);
+    RenderMesh2D(proj.getMesh(), shaders["VertexColor"], modelMatrix);
+    
+    float velocity = 250.0f;
+    float g = 50.0f;
+
+    proj.x += proj.sign * velocity * cos(proj.angle) * deltaTime;
+    proj.y = proj.y0 + (velocity * sin(proj.angle) * proj.time) - 0.5f * g * (proj.time * proj.time);
+    proj.time += deltaTime;
 }
 
 void tema1::Update(float deltaTimeSeconds)
@@ -108,15 +129,14 @@ void tema1::Update(float deltaTimeSeconds)
     drawTerrain();
     drawTank(deltaTimeSeconds, tank1);
     drawTank(deltaTimeSeconds, tank2);
-    if (tank1.proj) drawProjectile(tank1, deltaTimeSeconds);
-    if (tank2.proj) drawProjectile(tank2, deltaTimeSeconds);
+    /*for (Projectile& proj : projectiles) {
+        drawProjectile(proj, deltaTimeSeconds);
+    }*/
 }
-
 
 void tema1::FrameEnd()
 {
 }
-
 /*
  *  These are callback functions. To find more about callbacks and
  *  how they behave, see `input_controller.h`.
@@ -126,28 +146,28 @@ void tema1::FrameEnd()
 void tema1::OnInputUpdate(float deltaTime, int mods)
 {
     if (window->KeyHold(GLFW_KEY_D)) {
-        tank1.incrementX(75.0f * deltaTime);
+        tank1.incX(75.0f * deltaTime);
     }
     if (window->KeyHold(GLFW_KEY_A)) {
-        tank1.decrementX(75.0f * deltaTime);
+        tank1.incX(-75.0f * deltaTime);
     }
     if (window->KeyHold(GLFW_KEY_W)) {
-        tank1.incrementCannonAngle(deltaTime);
+        tank1.incCannonAngle(deltaTime);
     }
     if (window->KeyHold(GLFW_KEY_S)) {
-        tank1.decrementCannonAngle(deltaTime);
+        tank1.incCannonAngle(-deltaTime);
     }
     if (window->KeyHold(GLFW_KEY_RIGHT)) {
-        tank2.incrementX(75.0f * deltaTime);
+        tank2.incX(75.0f * deltaTime);
     }
     if (window->KeyHold(GLFW_KEY_LEFT)) {
-        tank2.decrementX(75.0f * deltaTime);
+        tank2.incX(-75.0f * deltaTime);
     }
     if (window->KeyHold(GLFW_KEY_UP)) {
-        tank2.incrementCannonAngle(deltaTime);
+        tank2.incCannonAngle(deltaTime);
     }
     if (window->KeyHold(GLFW_KEY_DOWN)) {
-        tank2.decrementCannonAngle(deltaTime);
+        tank2.incCannonAngle(-deltaTime);
     }
 }
 
@@ -155,10 +175,10 @@ void tema1::OnKeyPress(int key, int mods)
 {
     // Add key press event
     if (key == GLFW_KEY_SPACE) {
-       tank1.proj = true;
+        queueProjectile(tank1);
     }
     if (key == GLFW_KEY_ENTER) {
-       tank2.proj = true;
+        queueProjectile(tank2);
     }
 }
 

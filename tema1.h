@@ -8,6 +8,7 @@
 #include "TerrainBuilder.h"
 #include "ObjectsGeometry.h"
 #include "Tank.h"
+#include "Projectile.h"
 
 namespace m1
 {
@@ -34,12 +35,14 @@ namespace m1
         void OnWindowResize(int width, int height) override;
 
         void drawTerrain();
-        void tema1::drawTank(float deltaTimeSeconds, Tank &tank);
-        void tema1::drawProjectile(Tank& tank, float deltaTimeSeconds);
+        void drawTank(float deltaTimeSeconds, Tank& tank);
+        void queueProjectile(Tank& tank);
+        void drawProjectile(Projectile& proj, float deltaTimeSeconds);
     protected:
         glm::mat3 modelMatrix;
         TerrainBuilder terrainBuilder;
         Tank tank1;
         Tank tank2;
+        vector<Projectile> projectiles;
     };
 }   // namespace m1

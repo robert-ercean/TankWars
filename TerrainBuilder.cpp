@@ -53,19 +53,19 @@ void TerrainBuilder::buildTerrainMeshes() {
         // down left corner
         vertX = x;
         vertY = 0;
-        vertices.push_back(VertexFormat(glm::vec3(vertX, vertY, 0)));
+        vertices.push_back(VertexFormat(glm::vec3(vertX, vertY, 0), glm::vec3(0, 0.7f, 0.1f)));
           
         // up left corner
         vertY = heightMap[i];
-        vertices.push_back(VertexFormat(glm::vec3(vertX, vertY, 0)));
+        vertices.push_back(VertexFormat(glm::vec3(vertX, vertY, 0), glm::vec3(0.8f, 1.0f, 0.0f)));
         // down right corner
         vertX = x + sampleSize;
         vertY = 0;
-        vertices.push_back(VertexFormat(glm::vec3(vertX, vertY, 0)));
+        vertices.push_back(VertexFormat(glm::vec3(vertX, vertY, 0), glm::vec3(0, 0.7f, 0.1f)));
           
         // up right corner
         vertY = heightMap[++i];
-        vertices.push_back(VertexFormat(glm::vec3(vertX, vertY, 0)));
+        vertices.push_back(VertexFormat(glm::vec3(vertX, vertY, 0), glm::vec3(0.8f, 1.0f, 0.0f)));
         vector<unsigned int> indices =
         { 
         0, 1 ,2,
