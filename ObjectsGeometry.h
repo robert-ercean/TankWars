@@ -34,8 +34,7 @@ class ObjectsGeometry {
 				y = y0 + (velocity * sin(angle) * time) - 0.5f * g * (time * time);
 				time += MEDIAN_DELTA_TIME_SECONDS;
 			}
-
-			traj->SetDrawMode(GL_POINTS);
+			traj->SetDrawMode(GL_LINE_STRIP);
 			traj->InitFromData(vertices, indices);
 			return traj;
 		}

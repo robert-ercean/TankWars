@@ -10,7 +10,6 @@ class Tank {
 public:
 	Tank(float initialX);
 	vector<Mesh *> getMeshes();
-	Mesh* getProjTrajMesh(float deltaTimeSeconds);
 	bool is_brake();
 	void incX(float tX);
 	void incCannonAngle(float radians);

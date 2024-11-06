@@ -110,7 +110,7 @@ void tema1::drawTank(float deltaTimeSeconds, Tank &tank) {
     for (Projectile& proj : tank.projectiles) {
         drawProjectile(proj, deltaTimeSeconds);
     }
-    RenderMesh2D(tank.getProjTrajMesh(deltaTimeSeconds), shaders["VertexColor"], glm::mat3(1));
+    RenderMesh2D(ObjectsGeometry::getProjTrajectoryMesh(tank.x, tank.y, tank.slope, tank.cannonAngle), shaders["VertexColor"], glm::mat3(1));
 }
 void tema1::drawTerrain() {
     for (const auto& mesh: terrainBuilder.getTerrainMeshes()) {
@@ -123,7 +123,7 @@ void tema1::drawProjectile(Projectile& proj, float deltaTime) {
     modelMatrix *= transform2D::Translate(proj.x, proj.y);
     modelMatrix *= transform2D::Scale(5.0f, 5.0f);
     RenderMesh2D(proj.getMesh(), shaders["VertexColor"], modelMatrix);
-    
+
     float velocity = 500.0f;
     float g = 300.0f;
 
