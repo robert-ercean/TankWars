@@ -7,7 +7,7 @@ using namespace std;
 
 class Projectile {
 public:
-	Projectile(float x, float y, float radians);
+	Projectile(float x, float y, float radians, float slope);
 	Mesh* getMesh();
 	float x, y;
 	float y0;

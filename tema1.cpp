@@ -48,11 +48,12 @@ void tema1::FrameStart()
 }
 
 void tema1::queueProjectile(Tank& tank) {
-    float x = tank.getX();
-    float y = tank.getY();
-    float radians = tank.getCannonAngle();
-    Projectile proj(x, y, radians);
-    projectiles.push_back(proj);
+    float x = tank.x;
+    float y = tank.y;
+    float radians = tank.cannonAngle;
+    float slope = tank.slope;
+    Projectile proj(x, y, radians, slope);
+    tank.projectiles.push_back(proj);
 }
 
 void tema1::drawTank(float deltaTimeSeconds, Tank &tank) {
@@ -64,8 +65,8 @@ void tema1::drawTank(float deltaTimeSeconds, Tank &tank) {
     float sampleSize = terrainBuilder.getSampleSize();
     // place the first tank between some two points of the terrain
     // make sure the points dont exceed the window size since we'll seg fault
-    if (tank.getX() >= window->GetResolution().x - 1 || tank.getX() <= 1) return;
-    auto bounds = terrainBuilder.getSegmentBounds(floor(tank.getX()));
+    if (tank.x >= window->GetResolution().x - 1 || tank.x <= 1) return;
+    auto bounds = terrainBuilder.getSegmentBounds(floor(tank.x));
     float Ax, Ay, Bx, By;
     Ax = get<0>(bounds);
     Ay = get<1>(bounds);
@@ -81,28 +82,35 @@ void tema1::drawTank(float deltaTimeSeconds, Tank &tank) {
         landslideX = sign * deltaTimeSeconds * 30.0f;
         tank.incX(landslideX);
     }
-    float t = (tank.getX() - Ax) / (Bx - Ax);
+    float t = (tank.x - Ax) / (Bx - Ax);
     tankY = Ay + t * (By - Ay);
-    tank.setY(tankY);
+    tank.y = tankY;
     float Vy = By - Ay;
     float Vx = Bx - Ax;
-
+    float slope = atan2(Vy, Vx);
+    tank.slope = slope;
     glm::mat3 trajMat(1);
-    tankMat *= transform2D::Translate(tank.getX(), tankY);
+    tankMat *= transform2D::Translate(tank.x, tankY);
     tankMat *= transform2D::Scale(15.0f, 15.0f);
-    tankMat *= transform2D::Rotate(atan2(Vy, Vx));
+    tankMat *= transform2D::Rotate(slope);
+
     for (Mesh* mesh : tank.getMeshes()) {
         if (strcmp(mesh->GetMeshID(), "Cannon") == 0) {
             /* Rotate the cannon around the head's circle centre, so translate to the origin first, rotate and then translate back */
             tankMat *= transform2D::Translate(0, 2.0f);
-            tankMat *= transform2D::Rotate(tank.getCannonAngle());
+            /* Subtract the slope from the cannon rotation angle since the cannon's position should stay independent from sliding */
+            tankMat *= transform2D::Rotate(tank.cannonAngle - slope);
             tankMat *= transform2D::Translate(0, -2.0f);
-            trajMat = tankMat; /* The trajectory mesh will follow the same transformations as the cannon */
+            /* The trajectory mesh will follow the same transformations as the cannon, as it comes right after the cannon mesh in the array */
             RenderMesh2D(mesh, shaders["VertexColor"], tankMat);
             continue;
         }
         RenderMesh2D(mesh, shaders["VertexColor"], tankMat);
     }
+    for (Projectile& proj : tank.projectiles) {
+        drawProjectile(proj, deltaTimeSeconds);
+    }
+    RenderMesh2D(tank.getProjTrajMesh(deltaTimeSeconds), shaders["VertexColor"], glm::mat3(1));
 }
 void tema1::drawTerrain() {
     for (const auto& mesh: terrainBuilder.getTerrainMeshes()) {
@@ -110,14 +118,14 @@ void tema1::drawTerrain() {
     }
 }
 
-void tema1::drawProjectile(Projectile &proj, float deltaTime) {
+void tema1::drawProjectile(Projectile& proj, float deltaTime) {
     glm::mat3 modelMatrix(1);
     modelMatrix *= transform2D::Translate(proj.x, proj.y);
-    modelMatrix *= transform2D::Scale(10.0f, 10.0f);
+    modelMatrix *= transform2D::Scale(5.0f, 5.0f);
     RenderMesh2D(proj.getMesh(), shaders["VertexColor"], modelMatrix);
     
-    float velocity = 250.0f;
-    float g = 50.0f;
+    float velocity = 500.0f;
+    float g = 300.0f;
 
     proj.x += proj.sign * velocity * cos(proj.angle) * deltaTime;
     proj.y = proj.y0 + (velocity * sin(proj.angle) * proj.time) - 0.5f * g * (proj.time * proj.time);
@@ -129,9 +137,6 @@ void tema1::Update(float deltaTimeSeconds)
     drawTerrain();
     drawTank(deltaTimeSeconds, tank1);
     drawTank(deltaTimeSeconds, tank2);
-    /*for (Projectile& proj : projectiles) {
-        drawProjectile(proj, deltaTimeSeconds);
-    }*/
 }
 
 void tema1::FrameEnd()

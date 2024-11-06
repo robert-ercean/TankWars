@@ -6,32 +6,36 @@
 
 using namespace std;
 
+#define MEDIAN_DELTA_TIME_SECONDS 0.016f
+
 class ObjectsGeometry {
 	public: 
-		inline static Mesh* getProjTrajectoryMesh(float angle, float deltaTime) {
+		inline static Mesh* getProjTrajectoryMesh(float x, float y, float slope, float cannonAngle) {
 			Mesh* traj = new Mesh("projTrajectory");
 			vector<VertexFormat> vertices;
 			vector<unsigned int> indices;
-			float g = 10.0f;
-			float v = 30.0f;
-			float vx = v * cos(angle);
-			float vy = v * sin(angle);
-			unsigned int idx = 0;
 
-			float x0, y0;
-			/* Offsets for the cannon pos */
-			x0 = 3.0f;
-			y0 = 2.0f;
-			float y = 0;
-			while (y <= 0) {
-				float x = x0 + vx * deltaTime;
-				y = y0 + vy * deltaTime - 0.5f * (deltaTime * deltaTime) * g;
+			float offset = 30.0f;
+			x = x - offset * sin(slope);
+			float y0 = y + offset * cos(slope);
+			y = 0;
+			float time = 0.0f;
+			float angle = abs(cannonAngle);
+			float sign = (cannonAngle < 0.0f) ? -1.0f : 1.0f;
+
+			float velocity = 500.0f;
+			float g = 300.0f;
+			unsigned int idx = 0;
+			while (y >= 0) {
 				vertices.push_back(VertexFormat(glm::vec3(x, y, 0)));
 				indices.push_back(idx++);
-				deltaTime *= 2.0f;
+
+				x += sign * velocity * cos(angle) * MEDIAN_DELTA_TIME_SECONDS;
+				y = y0 + (velocity * sin(angle) * time) - 0.5f * g * (time * time);
+				time += MEDIAN_DELTA_TIME_SECONDS;
 			}
 
-			traj->SetDrawMode(GL_LINE_STRIP);
+			traj->SetDrawMode(GL_POINTS);
 			traj->InitFromData(vertices, indices);
 			return traj;
 		}
@@ -39,17 +43,18 @@ class ObjectsGeometry {
 			Mesh* proj = new Mesh("Projectile");
 			vector<VertexFormat> vertices;
 			vector<unsigned int> indices;
+			indices.push_back(0);
+			vertices.push_back(VertexFormat(glm::vec3(0, 0, 0)));
 			float radius = 1.0f;
 			int idx = 1;
-			for (float angle = 0; angle <= glm::two_pi<float>(); angle += 0.01f, idx++) {
+			for (float angle = 0; angle <= glm::two_pi<float>(); angle += 0.01f) {
 				float x = radius * cos(angle);
 				float y = radius * sin(angle);
 				VertexFormat vertex(glm::vec3(x, y, 0), glm::vec3(1, 0.0f, 1.0f));
 				vertices.push_back(vertex);
-				indices.push_back(0);
-				indices.push_back(idx);
-				indices.push_back(idx + 1);
+				indices.push_back(idx++);
 			}
+			proj->SetDrawMode(GL_TRIANGLE_FAN);
 			proj->InitFromData(vertices, indices);
 			return proj;
 
@@ -78,7 +83,7 @@ class ObjectsGeometry {
 			Mesh* semiCircle = new Mesh("semiCircle");
 			vector<VertexFormat> vertices;
 			vector<unsigned int> indices;
-			vertices.push_back(VertexFormat(glm::vec3(0, 0, 0)));
+			vertices.push_back(VertexFormat(glm::vec3(0, 2, 0)));
 			indices.push_back(0);
 			float radius = 1.5f;
 			int idx = 1;
