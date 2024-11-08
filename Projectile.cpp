@@ -3,7 +3,7 @@
 
 using namespace std;
 
-Projectile::Projectile(float x, float y, float radians, float slope) {
+Projectile::Projectile(float x, float y, float radians, float slope, unsigned int id) {
 	 /* Y Axis distance from the tank base to the head's centre on a flat surface (when the slope is 0) */
 	/* Note that the logic offset would be 2.0, but we multiply by 15.0 in the scaling transform during drawTank() */
 	float offset = 30.0f;
@@ -15,6 +15,7 @@ Projectile::Projectile(float x, float y, float radians, float slope) {
 	this->angle = abs(radians);
 	this->sign = (radians < 0.0f) ? -1.0f : 1.0f;
 	this->projMesh = ObjectsGeometry::getProjectileMesh();
+	this->destroyed = false;
 }
 
 Mesh *Projectile::getMesh() {

@@ -37,7 +37,10 @@ namespace m1
         void drawTerrain();
         void drawTank(float deltaTimeSeconds, Tank& tank);
         void queueProjectile(Tank& tank);
-        void drawProjectile(Projectile& proj, float deltaTimeSeconds);
+        void drawProjectiles(Tank& tank, float deltaTimeSeconds);
+        float interpolFunc(float a, float b, float interpolCoef);
+        void destroyProjectile(Tank& tank, unsigned int id);
+
     protected:
         glm::mat3 modelMatrix;
         TerrainBuilder terrainBuilder;

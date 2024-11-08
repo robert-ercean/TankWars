@@ -27,11 +27,12 @@ class ObjectsGeometry {
 			float g = 300.0f;
 			unsigned int idx = 0;
 			while (y >= 0) {
+				x += sign * velocity * cos(angle) * MEDIAN_DELTA_TIME_SECONDS;
+				y = y0 + (velocity * sin(angle) * time) - 0.5f * g * (time * time);
 				vertices.push_back(VertexFormat(glm::vec3(x, y, 0)));
 				indices.push_back(idx++);
 
-				x += sign * velocity * cos(angle) * MEDIAN_DELTA_TIME_SECONDS;
-				y = y0 + (velocity * sin(angle) * time) - 0.5f * g * (time * time);
+				//printf("%f  ||  %f\n", x, y);
 				time += MEDIAN_DELTA_TIME_SECONDS;
 			}
 			traj->SetDrawMode(GL_LINE_STRIP);

@@ -78,9 +78,9 @@ void TerrainBuilder::buildTerrainMeshes() {
     }
 }
 
-tuple<float, float, float, float> TerrainBuilder::getSegmentBounds(float tankX) {
+tuple<float, float, float, float> TerrainBuilder::getSegmentBounds(float x) {
     /* Get the terrain mesh that the tank currently stands on */
-    Mesh* currMesh = terrainMeshes[static_cast<int>(tankX)];
+    Mesh* currMesh = terrainMeshes[static_cast<int>(x)];
     vector<VertexFormat> currVertices = currMesh->vertices;
     float Ax, Ay, Bx, By;
     Ax = currVertices[1].position.x;

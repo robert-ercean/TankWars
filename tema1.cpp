@@ -48,11 +48,9 @@ void tema1::FrameStart()
 }
 
 void tema1::queueProjectile(Tank& tank) {
-    float x = tank.x;
-    float y = tank.y;
-    float radians = tank.cannonAngle;
-    float slope = tank.slope;
-    Projectile proj(x, y, radians, slope);
+    unsigned int id = (unsigned int)tank.projectiles.size();
+    printf("queued id: %u\n", id);
+    Projectile proj(tank.x, tank.y, tank.cannonAngle, tank.slope, id);
     tank.projectiles.push_back(proj);
 }
 
@@ -107,10 +105,8 @@ void tema1::drawTank(float deltaTimeSeconds, Tank &tank) {
         }
         RenderMesh2D(mesh, shaders["VertexColor"], tankMat);
     }
-    for (Projectile& proj : tank.projectiles) {
-        drawProjectile(proj, deltaTimeSeconds);
-    }
     RenderMesh2D(ObjectsGeometry::getProjTrajectoryMesh(tank.x, tank.y, tank.slope, tank.cannonAngle), shaders["VertexColor"], glm::mat3(1));
+    drawProjectiles(tank, deltaTimeSeconds);
 }
 void tema1::drawTerrain() {
     for (const auto& mesh: terrainBuilder.getTerrainMeshes()) {
@@ -118,18 +114,50 @@ void tema1::drawTerrain() {
     }
 }
 
-void tema1::drawProjectile(Projectile& proj, float deltaTime) {
-    glm::mat3 modelMatrix(1);
-    modelMatrix *= transform2D::Translate(proj.x, proj.y);
-    modelMatrix *= transform2D::Scale(5.0f, 5.0f);
-    RenderMesh2D(proj.getMesh(), shaders["VertexColor"], modelMatrix);
+float tema1::interpolFunc(float a, float b, float interpolCoef) {
+    return a * (1 - interpolCoef) + b * interpolCoef;
+}
 
-    float velocity = 500.0f;
-    float g = 300.0f;
+void tema1::drawProjectiles(Tank& tank, float deltaTime) {
+    vector<Projectile>surv_proj;
+    /* Firstly, elminate the */
+    /* Rendering the projectile */
+    for (Projectile& proj : tank.projectiles) {
+        glm::mat3 modelMatrix(1);
+        modelMatrix *= transform2D::Translate(proj.x, proj.y);
+        modelMatrix *= transform2D::Scale(5.0f, 5.0f);
+        RenderMesh2D(proj.getMesh(), shaders["VertexColor"], modelMatrix);
 
-    proj.x += proj.sign * velocity * cos(proj.angle) * deltaTime;
-    proj.y = proj.y0 + (velocity * sin(proj.angle) * proj.time) - 0.5f * g * (proj.time * proj.time);
-    proj.time += deltaTime;
+        /* Trajectory updates */
+        float velocity = 500.0f;
+        float g = 300.0f;
+        proj.x += proj.sign * velocity * cos(proj.angle) * deltaTime;
+        proj.y = proj.y0 + (velocity * sin(proj.angle) * proj.time) - 0.5f * g * (proj.time * proj.time);
+        proj.time += deltaTime;
+        /* Projectile out of the window bounds check */
+        if (proj.x <= 0.0f || proj.x >= 1280.0f) {
+            proj.destroyed = true;
+            continue;
+        }
+        /* Collisions detection */
+        auto bounds = terrainBuilder.getSegmentBounds(floor(proj.x));
+        float x1 = get<0>(bounds);
+        float y1 = get<1>(bounds);
+        float x2 = get<2>(bounds);
+        float y2 = get<3>(bounds);
+
+        float interpolCoef = (proj.x - x1) / (x2 - x1);
+        float yI = interpolFunc(y1, y2, interpolCoef);
+        if (proj.y - yI < 2.0f) {
+            proj.destroyed = true;
+        }
+    }
+    for (Projectile& proj : tank.projectiles) {
+        if (!proj.destroyed) {
+            surv_proj.push_back(proj);
+        }
+    }
+    tank.projectiles = surv_proj;
 }
 
 void tema1::Update(float deltaTimeSeconds)
