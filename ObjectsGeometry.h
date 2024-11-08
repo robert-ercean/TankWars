@@ -10,6 +10,34 @@ using namespace std;
 
 class ObjectsGeometry {
 	public: 
+		inline static vector<Mesh*> getHpBar() {
+			vector<Mesh*> hpbar;
+			
+			Mesh* contour = new Mesh("contour");
+			vector<VertexFormat> vertices;
+			vector<unsigned int> indices = { 0, 1, 2, 3, 0};
+			vertices.push_back(glm::vec3(-2, 3, 0));
+			vertices.push_back(glm::vec3(-2, 4, 0));
+			vertices.push_back(glm::vec3(2, 4, 0));
+			vertices.push_back(glm::vec3(2, 3, 0));
+			contour->SetDrawMode(GL_LINE_STRIP);
+			contour->InitFromData(vertices, indices);
+			hpbar.push_back(contour);
+
+			int max = 4;
+			for (int i = 0; i < max; i++) {
+				Mesh* bar = new Mesh("bar");
+				vector<VertexFormat> vertices;
+				vector<unsigned int> indices = { 0, 1, 2, 2, 3, 0 };
+				vertices.push_back(glm::vec3(-2 + i, 3, 0));
+				vertices.push_back(glm::vec3(-2 + i, 4, 0));
+				vertices.push_back(glm::vec3(-1 + i, 4, 0));
+				vertices.push_back(glm::vec3(-1 + i, 3, 0));
+				bar->InitFromData(vertices, indices);
+				hpbar.push_back(bar);
+			}
+			return hpbar;
+		}
 		inline static Mesh* getProjTrajectoryMesh(float x, float y, float slope, float cannonAngle) {
 			Mesh* traj = new Mesh("projTrajectory");
 			vector<VertexFormat> vertices;
@@ -31,8 +59,6 @@ class ObjectsGeometry {
 				y = y0 + (velocity * sin(angle) * time) - 0.5f * g * (time * time);
 				vertices.push_back(VertexFormat(glm::vec3(x, y, 0)));
 				indices.push_back(idx++);
-
-				//printf("%f  ||  %f\n", x, y);
 				time += MEDIAN_DELTA_TIME_SECONDS;
 			}
 			traj->SetDrawMode(GL_LINE_STRIP);

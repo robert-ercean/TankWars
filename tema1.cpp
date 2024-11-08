@@ -90,7 +90,9 @@ void tema1::drawTank(float deltaTimeSeconds, Tank &tank) {
     tankMat *= transform2D::Translate(tank.x, tankY);
     tankMat *= transform2D::Scale(15.0f, 15.0f);
     tankMat *= transform2D::Rotate(slope);
-
+    glm::mat3 hpMat(1);
+    hpMat *= transform2D::Translate(0, 30.0f);
+    hpMat *= tankMat;
     for (Mesh* mesh : tank.getMeshes()) {
         if (strcmp(mesh->GetMeshID(), "Cannon") == 0) {
             /* Rotate the cannon around the head's circle centre, so translate to the origin first, rotate and then translate back */
@@ -106,6 +108,10 @@ void tema1::drawTank(float deltaTimeSeconds, Tank &tank) {
     }
     RenderMesh2D(ObjectsGeometry::getProjTrajectoryMesh(tank.x, tank.y, tank.slope, tank.cannonAngle), shaders["VertexColor"], glm::mat3(1));
     drawProjectiles(tank, deltaTimeSeconds);
+    vector<Mesh*> hpbar = ObjectsGeometry::getHpBar();
+    for (int i = 0; i < tank.hp + 1; i++) {
+        RenderMesh2D(hpbar[i], shaders["VertexColor"], hpMat);
+    }
 }
 void tema1::drawTerrain() {
     for (const auto& mesh: terrainBuilder.getTerrainMeshes()) {

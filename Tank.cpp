@@ -4,7 +4,7 @@
 using namespace std;
 
 Tank::Tank(float initialX) {
-	this->hp = 5;
+	this->hp = 4;
 	this->x = initialX;
 	this->cannonAngle = 0.0f;
 	this->brake = true;
