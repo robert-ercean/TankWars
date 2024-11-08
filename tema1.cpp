@@ -11,10 +11,8 @@ using namespace m1;
 
 tema1::tema1() :
     terrainBuilder(static_cast<float>(window->GetResolution().x), static_cast<float>(window->GetResolution().y)),
-    tank1(100.0f),
-    tank2(700.0f)
+    tanks({Tank(100.0f), Tank(700.0f)})
 {}
-
 
 tema1::~tema1()
 {
@@ -55,6 +53,7 @@ void tema1::queueProjectile(Tank& tank) {
 }
 
 void tema1::drawTank(float deltaTimeSeconds, Tank &tank) {
+    if (tank.hp <= 0) return;
     float threshold = 1.0f;
     float landslideX, landslideY;
     landslideX = 0.0f;
@@ -120,9 +119,8 @@ float tema1::interpolFunc(float a, float b, float interpolCoef) {
 
 void tema1::drawProjectiles(Tank& tank, float deltaTime) {
     vector<Projectile>surv_proj;
-    /* Firstly, elminate the */
-    /* Rendering the projectile */
     for (Projectile& proj : tank.projectiles) {
+        /* Rendering the projectile */
         glm::mat3 modelMatrix(1);
         modelMatrix *= transform2D::Translate(proj.x, proj.y);
         modelMatrix *= transform2D::Scale(5.0f, 5.0f);
@@ -139,7 +137,7 @@ void tema1::drawProjectiles(Tank& tank, float deltaTime) {
             proj.destroyed = true;
             continue;
         }
-        /* Collisions detection */
+        /* Terrain collisions detection */
         auto bounds = terrainBuilder.getSegmentBounds(floor(proj.x));
         float x1 = get<0>(bounds);
         float y1 = get<1>(bounds);
@@ -148,10 +146,29 @@ void tema1::drawProjectiles(Tank& tank, float deltaTime) {
 
         float interpolCoef = (proj.x - x1) / (x2 - x1);
         float yI = interpolFunc(y1, y2, interpolCoef);
-        if (proj.y - yI < 2.0f) {
+        if (proj.y - yI < 2.0f) {   
             proj.destroyed = true;
+            continue;
+        }
+
+        /* Tanks collisions detection */
+        float radius = 40.0f;
+        for (Tank& tnk : tanks) {
+            if (&tnk == &tank) {    /* No friendly fire */
+                continue;
+            }
+            float distX = proj.x - tnk.x;
+            float distY = proj.y - tnk.y;
+            float distance = sqrt(distX * distX + distY * distY);
+            if (distance <= radius) {
+                printf("collided\n");
+                proj.destroyed = true;
+                tnk.hp -= 1;
+                break;
+            }
         }
     }
+    /* Updating the tank's proejctiles array, filtering out collided / out of bounds projectiles */
     for (Projectile& proj : tank.projectiles) {
         if (!proj.destroyed) {
             surv_proj.push_back(proj);
@@ -163,8 +180,9 @@ void tema1::drawProjectiles(Tank& tank, float deltaTime) {
 void tema1::Update(float deltaTimeSeconds)
 {
     drawTerrain();
-    drawTank(deltaTimeSeconds, tank1);
-    drawTank(deltaTimeSeconds, tank2);
+    for (Tank& tank : tanks) {
+        drawTank(deltaTimeSeconds, tank);
+    }
 }
 
 void tema1::FrameEnd()
@@ -179,28 +197,28 @@ void tema1::FrameEnd()
 void tema1::OnInputUpdate(float deltaTime, int mods)
 {
     if (window->KeyHold(GLFW_KEY_D)) {
-        tank1.incX(75.0f * deltaTime);
+        tanks[0].incX(75.0f * deltaTime);
     }
     if (window->KeyHold(GLFW_KEY_A)) {
-        tank1.incX(-75.0f * deltaTime);
+        tanks[0].incX(-75.0f * deltaTime);
     }
     if (window->KeyHold(GLFW_KEY_W)) {
-        tank1.incCannonAngle(deltaTime);
+        tanks[0].incCannonAngle(deltaTime);
     }
     if (window->KeyHold(GLFW_KEY_S)) {
-        tank1.incCannonAngle(-deltaTime);
+        tanks[0].incCannonAngle(-deltaTime);
     }
     if (window->KeyHold(GLFW_KEY_RIGHT)) {
-        tank2.incX(75.0f * deltaTime);
+        tanks[1].incX(75.0f * deltaTime);
     }
     if (window->KeyHold(GLFW_KEY_LEFT)) {
-        tank2.incX(-75.0f * deltaTime);
+        tanks[1].incX(-75.0f * deltaTime);
     }
     if (window->KeyHold(GLFW_KEY_UP)) {
-        tank2.incCannonAngle(deltaTime);
+        tanks[1].incCannonAngle(deltaTime);
     }
     if (window->KeyHold(GLFW_KEY_DOWN)) {
-        tank2.incCannonAngle(-deltaTime);
+        tanks[1].incCannonAngle(-deltaTime);
     }
 }
 
@@ -208,10 +226,10 @@ void tema1::OnKeyPress(int key, int mods)
 {
     // Add key press event
     if (key == GLFW_KEY_SPACE) {
-        queueProjectile(tank1);
+        queueProjectile(tanks[0]);
     }
     if (key == GLFW_KEY_ENTER) {
-        queueProjectile(tank2);
+        queueProjectile(tanks[1]);
     }
 }
 

@@ -44,8 +44,7 @@ namespace m1
     protected:
         glm::mat3 modelMatrix;
         TerrainBuilder terrainBuilder;
-        Tank tank1;
-        Tank tank2;
+        vector<Tank> tanks;
         vector<Projectile> projectiles;
     };
 }   // namespace m1

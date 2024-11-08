@@ -13,6 +13,7 @@ public:
 	bool is_brake();
 	void incX(float tX);
 	void incCannonAngle(float radians);
+	int hp;
 	float x;
 	float y;
 	float slope;
