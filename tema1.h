@@ -34,14 +34,15 @@ namespace m1
         void OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY) override;
         void OnWindowResize(int width, int height) override;
 
-        void drawTerrain();
+        void drawTerrain(float deltaTime);
         void drawTank(float deltaTimeSeconds, Tank& tank);
         void queueProjectile(Tank& tank);
         void drawProjectiles(Tank& tank, float deltaTimeSeconds);
         float interpolFunc(float a, float b, float interpolCoef);
-        void destroyProjectile(Tank& tank, unsigned int id);
+        void deform_terrain(float x);
 
     protected:
+        bool coll = false;
         glm::mat3 modelMatrix;
         TerrainBuilder terrainBuilder;
         vector<Tank> tanks;

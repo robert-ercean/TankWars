@@ -30,7 +30,6 @@ void tema1::Init()
     camera->Update();
     GetCameraInput()->SetActive(false);
 
-    terrainBuilder.buildTerrainGeometry();
 }
 
 
@@ -59,7 +58,6 @@ void tema1::drawTank(float deltaTimeSeconds, Tank &tank) {
     landslideX = 0.0f;
     landslideY = 0.0f;
     glm::mat3 tankMat(1);
-    float sampleSize = terrainBuilder.getSampleSize();
     // place the first tank between some two points of the terrain
     // make sure the points dont exceed the window size since we'll seg fault
     if (tank.x >= window->GetResolution().x - 1 || tank.x <= 1) return;
@@ -107,14 +105,15 @@ void tema1::drawTank(float deltaTimeSeconds, Tank &tank) {
         RenderMesh2D(mesh, shaders["VertexColor"], tankMat);
     }
     RenderMesh2D(ObjectsGeometry::getProjTrajectoryMesh(tank.x, tank.y, tank.slope, tank.cannonAngle), shaders["VertexColor"], glm::mat3(1));
-    drawProjectiles(tank, deltaTimeSeconds);
     vector<Mesh*> hpbar = ObjectsGeometry::getHpBar();
     for (int i = 0; i < tank.hp + 1; i++) {
         RenderMesh2D(hpbar[i], shaders["VertexColor"], hpMat);
     }
+    drawProjectiles(tank, deltaTimeSeconds);
 }
-void tema1::drawTerrain() {
-    for (const auto& mesh: terrainBuilder.getTerrainMeshes()) {
+void tema1::drawTerrain(float deltaTime) {
+    terrainBuilder.updateHeightMap(deltaTime);
+    for (const auto& mesh: terrainBuilder.terrainMeshes) {
         RenderMesh2D(mesh, shaders["VertexColor"], glm::mat3(1));
     }
 }
@@ -122,6 +121,32 @@ void tema1::drawTerrain() {
 float tema1::interpolFunc(float a, float b, float interpolCoef) {
     return a * (1 - interpolCoef) + b * interpolCoef;
 }
+
+void tema1::deform_terrain(float fx) {
+    printf("deformin terrain\n");
+    float radius = 60.0f;
+    int x = (int)floor(fx);
+    float theta = 0.0f;
+    float cx = fx;
+    float cy = terrainBuilder.heightMap[x];
+    for (int i = x - (int)radius; i < x + (int)radius; i++) {
+        float oldx = (float) i;
+        float oldy = terrainBuilder.heightMap[i];
+        float dist = sqrt(pow((oldx - cx), 2) + pow((oldy - cy), 2));
+        if (dist < radius) {
+            float diff = 0;
+            while (true) {
+                float newdist = sqrt(pow((oldx - cx), 2) + pow((oldy - diff - cy), 2));
+                if (newdist >= radius) break;
+                diff += 0.01f;
+            }
+            terrainBuilder.heightMap[i] -= diff;
+        }
+    }
+    terrainBuilder.buildTerrainMeshes();
+    coll = true;
+}
+
 
 void tema1::drawProjectiles(Tank& tank, float deltaTime) {
     vector<Projectile>surv_proj;
@@ -154,6 +179,8 @@ void tema1::drawProjectiles(Tank& tank, float deltaTime) {
         float yI = interpolFunc(y1, y2, interpolCoef);
         if (proj.y - yI < 2.0f) {   
             proj.destroyed = true;
+            deform_terrain(proj.x);
+            printf("terrain coll\n");
             continue;
         }
 
@@ -167,7 +194,7 @@ void tema1::drawProjectiles(Tank& tank, float deltaTime) {
             float distY = proj.y - tnk.y;
             float distance = sqrt(distX * distX + distY * distY);
             if (distance <= radius) {
-                printf("collided\n");
+                printf("tank coll\n");
                 proj.destroyed = true;
                 tnk.hp -= 1;
                 break;
@@ -185,7 +212,7 @@ void tema1::drawProjectiles(Tank& tank, float deltaTime) {
 
 void tema1::Update(float deltaTimeSeconds)
 {
-    drawTerrain();
+    drawTerrain(deltaTimeSeconds);
     for (Tank& tank : tanks) {
         drawTank(deltaTimeSeconds, tank);
     }
@@ -202,6 +229,12 @@ void tema1::FrameEnd()
 
 void tema1::OnInputUpdate(float deltaTime, int mods)
 {
+    if (window->KeyHold(GLFW_KEY_N)) {
+        GetSceneCamera()->SetPosition(glm::vec3(0, 0, 50));
+    }
+    if (window->KeyHold(GLFW_KEY_K)) {
+        GetSceneCamera()->SetPosition(glm::vec3(0, -500, 50));
+    }
     if (window->KeyHold(GLFW_KEY_D)) {
         tanks[0].incX(75.0f * deltaTime);
     }

@@ -27,30 +27,24 @@ public:
     void buildTerrainGeometry();
     /* Populates the heightMap with height values, sampled at fixed intervals
      * based on generateHeight */
-    void setHeightMap();
-    /* Returns the heightMap */
-    vector<float> getHeightMap();
-    /* Returns the sampling segment size */
-    float getSampleSize();
+    void setInitialHeightMap();
     /* Populates the terrainMeshes vector with a series of meshes that will
      * build up the terrain */
     void buildTerrainMeshes();
-    /* Returns the terrain meshes */
-    std::vector<Mesh*> getTerrainMeshes();
+    void updateHeightMap(float deltaTime);
     tuple<float, float, float, float> TerrainBuilder::getSegmentBounds(float tankX);
-
+    /* HeightMap used for rasterizing the terrain' squares */
+    /* vector containing multiple paralelipiped meshes that will be rasterized
+     * inside the Update() method, building the terrain */
+    vector<float> heightMap;
+    float maxWidth;
+    std::vector<Mesh*> terrainMeshes;
 private:
     /* Value used to populate the heightMap */
     float heightModifier;
     /* Distance between any two points of the heightMap */
     float sampleSize;
     /* Maximum width of the terrain, set to the viewport width size */
-    float maxWidth;
-    /* HeightMap used for rasterizing the terrain' squares */
-    vector<float> heightMap;
-    /* vector containing multiple paralelipiped meshes that will be rasterized
-     * inside the Update() method, building the terrain */
-    std::vector<Mesh*> terrainMeshes;
     /* Generates a height value based on the height sampling function 
      * f(x) = sin(x) +  0.3sin(4x) + pi/2, whose output will be 
      * multiplied by the heightModifier to generate an appropiate y 
@@ -58,8 +52,4 @@ private:
      * by a small fraction (i.e. 0.01) to maintain the continuity appearance
      * of the sinusoidal functions sum */
     float generateHeight(float x);
-    /* Returns the heightModifer value used to build Y coordinates of the terrain's meshes 
-     * Since we don't want any point of the terrain to exceed half of the window's height 
-     * we calculate this based on the formula: heightModifier = (0.5 * windowY) / max(f(x)) */
-    float setHeightModifier(float windowY);
 };

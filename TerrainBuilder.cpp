@@ -7,44 +7,42 @@ using namespace std;
 TerrainBuilder::TerrainBuilder(float windowX, float windowY) {
     this->maxWidth = static_cast<float>(windowX);
     this->sampleSize = 1.0f;
-    this->heightModifier = setHeightModifier(windowY);
+    this->heightModifier = (windowY * 0.5f) / SAMPLING_FUNCTION_MAX_VALUE;
+    setInitialHeightMap();
 }
-float TerrainBuilder::setHeightModifier(float windowY) {
-    return (windowY * 0.5f) / SAMPLING_FUNCTION_MAX_VALUE;
-}
-
-std::vector<Mesh*> TerrainBuilder::getTerrainMeshes() {
-    return terrainMeshes;
-}
-
-vector<float> TerrainBuilder::getHeightMap() {
-    return heightMap;
-}
-
-float TerrainBuilder::getSampleSize() {
-    return sampleSize;
-}
-
-void TerrainBuilder::setHeightMap() {
+void TerrainBuilder::setInitialHeightMap() {
     for (float x = 0.0f; x <= maxWidth; x += sampleSize) {
         float y = generateHeight(x);
         heightMap.emplace_back(y);
     }
 }
-
 float TerrainBuilder::generateHeight(float x) {
     x *= SAMPLING_FUNCTION_X_MODIFIER;
     float y = (sin(x) + 0.2f * sin(4.0f * x) + glm::half_pi<float>()) * heightModifier;
     return y;
 }
-
-
-void TerrainBuilder::buildTerrainGeometry() {
-    setHeightMap();
+void TerrainBuilder::updateHeightMap(float deltaTime) {
+    float d;
+    float threshold = 1.0f;
+    for (int i = 0; i < heightMap.size() - 1; i++) {
+        d = abs(heightMap[i] - heightMap[i + 1]);
+        if (d > threshold) {
+            float e = deltaTime * d;
+            if (heightMap[i] < heightMap[i + 1]) {
+                heightMap[i] += e;
+                heightMap[i + 1] -= e;
+            }
+            else {
+                heightMap[i] -= e;
+                heightMap[i + 1] += e;
+            }
+        }
+    }
     buildTerrainMeshes();
 }
 
 void TerrainBuilder::buildTerrainMeshes() {
+    vector<Mesh*>meshes;
     unsigned int i = 0;
     float vertX;
     float vertY;
@@ -74,10 +72,10 @@ void TerrainBuilder::buildTerrainMeshes() {
         std::string uniqueID = "terrain_mesh_" + std::to_string(static_cast<int>(x));
         Mesh* newMesh = new Mesh(uniqueID.c_str());
         newMesh->InitFromData(vertices, indices);
-        terrainMeshes.push_back(newMesh);
+        meshes.push_back(newMesh);
     }
+    terrainMeshes = meshes;
 }
-
 tuple<float, float, float, float> TerrainBuilder::getSegmentBounds(float x) {
     /* Get the terrain mesh that the tank currently stands on */
     Mesh* currMesh = terrainMeshes[static_cast<int>(x)];
