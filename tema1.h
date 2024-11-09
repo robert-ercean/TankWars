@@ -42,7 +42,7 @@ namespace m1
         void deform_terrain(float x);
 
     protected:
-        bool coll = false;
+        bool collisionHappened = false;
         glm::mat3 modelMatrix;
         TerrainBuilder terrainBuilder;
         vector<Tank> tanks;

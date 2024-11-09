@@ -24,21 +24,16 @@ public:
     /* Initializes the building procedures associated with the terrain, such 
      * as constructing the height map and the meshes
      * calls setHeightMap and buildTerrainMeshes */
-    void buildTerrainGeometry();
     /* Populates the heightMap with height values, sampled at fixed intervals
      * based on generateHeight */
     void setInitialHeightMap();
-    /* Populates the terrainMeshes vector with a series of meshes that will
-     * build up the terrain */
-    void buildTerrainMeshes();
-    void updateHeightMap(float deltaTime);
+    bool updateHeightMap(float deltaTime);
     tuple<float, float, float, float> TerrainBuilder::getSegmentBounds(float tankX);
     /* HeightMap used for rasterizing the terrain' squares */
     /* vector containing multiple paralelipiped meshes that will be rasterized
      * inside the Update() method, building the terrain */
     vector<float> heightMap;
     float maxWidth;
-    std::vector<Mesh*> terrainMeshes;
 private:
     /* Value used to populate the heightMap */
     float heightModifier;

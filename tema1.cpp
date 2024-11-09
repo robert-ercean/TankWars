@@ -112,9 +112,27 @@ void tema1::drawTank(float deltaTimeSeconds, Tank &tank) {
     drawProjectiles(tank, deltaTimeSeconds);
 }
 void tema1::drawTerrain(float deltaTime) {
-    terrainBuilder.updateHeightMap(deltaTime);
-    for (const auto& mesh: terrainBuilder.terrainMeshes) {
-        RenderMesh2D(mesh, shaders["VertexColor"], glm::mat3(1));
+    if (collisionHappened) {
+        bool ret = terrainBuilder.updateHeightMap(deltaTime);
+        collisionHappened = ret;
+    }
+    Mesh* square = new Mesh("square");
+    vector<VertexFormat> vertices;
+    vector<unsigned int> indices = { 0, 1 , 2, 2, 3, 0 };
+    vertices.push_back(VertexFormat(glm::vec3(0, -1, 0), glm::vec3(0.1f, 0.9f, 0.1f)));
+    vertices.push_back(VertexFormat(glm::vec3(0, 0, 0), glm::vec3(0.1f, 0.9f, 0.1f)));
+    vertices.push_back(VertexFormat(glm::vec3(1, 0, 0), glm::vec3(0.1f, 0.9f, 0.1f)));
+    vertices.push_back(VertexFormat(glm::vec3(1, -1, 0), glm::vec3(0.1f, 0.9f, 0.1f)));
+    square->InitFromData(vertices, indices);
+
+    for (int i = 0; i < terrainBuilder.heightMap.size() - 1; ++i) {
+        glm::vec2 A((float)i, terrainBuilder.heightMap[i]);
+        glm::vec2 B((float)(i + 1), terrainBuilder.heightMap[i + 1]);
+        glm::mat3 modelMat(1);
+        modelMat *= transform2D::Translate(A.x, A.y);
+        modelMat *= transform2D::ShearX((B.y - A.y) / (B.x - A.x));
+        modelMat *= transform2D::Scale(B.x - A.x, max(B.y, A.y));
+        RenderMesh2D(square, shaders["VertexColor"], modelMat);
     }
 }
 
@@ -129,7 +147,7 @@ void tema1::deform_terrain(float fx) {
     float theta = 0.0f;
     float cx = fx;
     float cy = terrainBuilder.heightMap[x];
-    for (int i = x - (int)radius; i < x + (int)radius; i++) {
+    for (int i = max(0, x - (int)radius); i < min(x + (int)radius, window->GetResolution().x); i++) {
         float oldx = (float) i;
         float oldy = terrainBuilder.heightMap[i];
         float dist = sqrt(pow((oldx - cx), 2) + pow((oldy - cy), 2));
@@ -143,8 +161,7 @@ void tema1::deform_terrain(float fx) {
             terrainBuilder.heightMap[i] -= diff;
         }
     }
-    terrainBuilder.buildTerrainMeshes();
-    coll = true;
+    collisionHappened = true;
 }
 
 
@@ -230,7 +247,9 @@ void tema1::FrameEnd()
 void tema1::OnInputUpdate(float deltaTime, int mods)
 {
     if (window->KeyHold(GLFW_KEY_N)) {
-        GetSceneCamera()->SetPosition(glm::vec3(0, 0, 50));
+        for (int i = 0; i < terrainBuilder.heightMap.size(); i++) {
+            printf("x: %d || y : %f\n", i, terrainBuilder.heightMap[i]);
+        }
     }
     if (window->KeyHold(GLFW_KEY_K)) {
         GetSceneCamera()->SetPosition(glm::vec3(0, -500, 50));

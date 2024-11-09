@@ -21,13 +21,15 @@ float TerrainBuilder::generateHeight(float x) {
     float y = (sin(x) + 0.2f * sin(4.0f * x) + glm::half_pi<float>()) * heightModifier;
     return y;
 }
-void TerrainBuilder::updateHeightMap(float deltaTime) {
+bool TerrainBuilder::updateHeightMap(float deltaTime) {
+    bool ret = false;
     float d;
     float threshold = 1.0f;
     for (int i = 0; i < heightMap.size() - 1; i++) {
         d = abs(heightMap[i] - heightMap[i + 1]);
         if (d > threshold) {
-            float e = deltaTime * d;
+            ret = true;
+            float e = deltaTime * 10.0f;
             if (heightMap[i] < heightMap[i + 1]) {
                 heightMap[i] += e;
                 heightMap[i + 1] -= e;
@@ -38,52 +40,14 @@ void TerrainBuilder::updateHeightMap(float deltaTime) {
             }
         }
     }
-    buildTerrainMeshes();
-}
-
-void TerrainBuilder::buildTerrainMeshes() {
-    vector<Mesh*>meshes;
-    unsigned int i = 0;
-    float vertX;
-    float vertY;
-    for (float x = 0.0f; x < maxWidth; x += sampleSize) {
-        vector<VertexFormat> vertices;
-        // down left corner
-        vertX = x;
-        vertY = 0;
-        vertices.push_back(VertexFormat(glm::vec3(vertX, vertY, 0), glm::vec3(0, 0.7f, 0.1f)));
-          
-        // up left corner
-        vertY = heightMap[i];
-        vertices.push_back(VertexFormat(glm::vec3(vertX, vertY, 0), glm::vec3(0.8f, 1.0f, 0.0f)));
-        // down right corner
-        vertX = x + sampleSize;
-        vertY = 0;
-        vertices.push_back(VertexFormat(glm::vec3(vertX, vertY, 0), glm::vec3(0, 0.7f, 0.1f)));
-          
-        // up right corner
-        vertY = heightMap[++i];
-        vertices.push_back(VertexFormat(glm::vec3(vertX, vertY, 0), glm::vec3(0.8f, 1.0f, 0.0f)));
-        vector<unsigned int> indices =
-        { 
-        0, 1 ,2,
-        1, 3, 2
-        };
-        std::string uniqueID = "terrain_mesh_" + std::to_string(static_cast<int>(x));
-        Mesh* newMesh = new Mesh(uniqueID.c_str());
-        newMesh->InitFromData(vertices, indices);
-        meshes.push_back(newMesh);
-    }
-    terrainMeshes = meshes;
+    return ret;
 }
 tuple<float, float, float, float> TerrainBuilder::getSegmentBounds(float x) {
     /* Get the terrain mesh that the tank currently stands on */
-    Mesh* currMesh = terrainMeshes[static_cast<int>(x)];
-    vector<VertexFormat> currVertices = currMesh->vertices;
     float Ax, Ay, Bx, By;
-    Ax = currVertices[1].position.x;
-    Ay = currVertices[1].position.y;
-    Bx = currVertices[3].position.x;
-    By = currVertices[3].position.y;
+    Ax = x;
+    Bx = x + 1;
+    Ay = heightMap[(int)x];
+    By = heightMap[(int)(x + 1)];
     return { Ax, Ay, Bx, By };
 }
